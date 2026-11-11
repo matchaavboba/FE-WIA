@@ -25,28 +25,30 @@ Pelapor menjadi penentu akhir apakah suatu laporan benar-benar *rampung*. Platfo
 | Data sulit dipahami | **Papan Tanggap**, **Ringkasan Bulanan**, dan "Dari Mana Data Ini?" untuk tiap angka |
 | Layanan belum inklusif | Teks besar, kontras tinggi, fitur dibacakan, dan navigasi keyboard (target WCAG 2.2 AA) |
 
-### Fitur Utama
+### Fitur dan Status Implementasi
 
-- **Lapor Cepat**: pilih kategori lewat ikon (Jalan, Lampu, Saluran Air), foto "sebelum", lokasi terisi otomatis, bisa anonim atau bernama, lalu mendapat kode lacak.
-- **Lacak Laporan**: masukkan kode atau lihat riwayat akun; linimasa status diperbarui secara real-time.
-- **Peta Laporan**: sebaran laporan per wilayah dengan filter kategori, status, dan periode; status dibedakan lewat warna dan bentuk (Baru, Diproses, Selesai, Perlu dicek).
-- **Laporan Serupa**: sistem menampilkan laporan di sekitar lokasi dengan kategori sama sehingga warga bisa mendukungnya tanpa membuat laporan ganda.
-- **Panel Petugas**: antrean verifikasi, penanda "perlu verifikasi tambahan", dan pembaruan status penanganan.
-- **Dashboard (Civic Insight)**: tren, distribusi, perbandingan antarwilayah, periode, dan kategori, disertai insight otomatis yang bersifat deskriptif.
-- **Tentang & Sumber Data**: metodologi, sumber dan waktu pembaruan data, serta kebijakan privasi.
+- **Pelaporan dan pelacakan**: formulir laporan, validasi, kode lacak, serta halaman riwayat tersedia. Pengiriman ke database memerlukan konfigurasi Supabase.
+- **Peta laporan**: peta Leaflet dengan marker dan filter wilayah/status/kategori; sumber data mengikuti konfigurasi live atau offline.
+- **Dashboard dan Papan Tanggap**: ringkasan, tren, distribusi, kinerja, dan state loading/error/kosong.
+- **Akun**: login, daftar, dan profil menggunakan Supabase Auth. Akun publik mendapat role `warga`; role admin/petugas diberikan oleh administrator.
+- **Validasi backend**: validasi skema dan koordinat, transisi status, pembatasan permintaan, sanitasi konten, dan pemeriksaan magic bytes untuk gambar.
+- **Masih perlu integrasi end-to-end**: unggah dan baca foto Supabase Storage, pengujian autentikasi/role di project Supabase milik tim, serta verifikasi deploy staging/production.
+
+Data lokal yang tersedia untuk pengembangan bukan data live. Saat mock aktif, laporan baru disimpan di browser dan tidak masuk ke Supabase. Antarmuka tidak menampilkan badge mode; tim tetap harus memastikan sumber data sebelum demo atau deploy.
 
 ---
 
 ## 2. Alur Aplikasi
 
 Aplikasi melibatkan tiga peran: **Warga/Pengguna**, **Sistem (validasi)**, dan **Petugas/Instansi**.
+Alur berikut menjelaskan rancangan layanan; fitur yang belum terhubung penuh ke database atau storage ditandai pada bagian [Status Proyek dan Verifikasi](#5-status-proyek-dan-verifikasi).
 
 1. **Warga membuat laporan.** Dari beranda, warga memilih *Lapor Sekarang*, mengisi judul, deskripsi, kategori, lokasi, foto sebelum, dan identitas (anonim atau bernama). Setelah terkirim, warga menerima **kode lacak**.
 2. **Sistem memeriksa laporan awal.** Sistem mengecek kelengkapan dan relevansi. Jika kurang jelas, warga mendapat **saran perbaikan** (lokasi, kronologi, detail). Jika terdeteksi spam, promosi, pinjaman, atau iklan, laporan diberi status **"Memerlukan verifikasi tambahan"**. Laporan tidak dihapus otomatis.
-3. **Petugas memverifikasi.** Petugas menerima laporan, meminta dilengkapi, atau menolak disertai alasan. Laporan yang ditandai sistem ditinjau oleh petugas.
+3. **Petugas memverifikasi.** Petugas menerima laporan, meminta dilengkapi, atau menolak disertai alasan. Laporan yang ditandai sistem perlu ditinjau oleh petugas.
 4. **Laporan disimpan dan dicek kemiripannya.** Data masuk ke database (Supabase PostgreSQL + PostGIS) dan foto ke Storage. Sistem mencari laporan serupa berdasarkan kategori dan radius lokasi.
 5. **Instansi menangani.** Status berjalan: **Diteruskan → Dalam Penanganan → Selesai**, dan petugas mengunggah foto sesudah.
-6. **Warga melacak secara real-time.** Perubahan status tampil langsung lewat Supabase Realtime pada halaman *Lacak Laporan*.
+6. **Warga melacak laporan.** Warga melihat linimasa status di halaman *Lacak Laporan*. Pembaruan realtime memerlukan konfigurasi dan integrasi Supabase yang sesuai.
 7. **Warga mengonfirmasi hasil.** Warga melihat foto sebelum dan sesudah berdampingan lalu menjawab "Sudah beres" atau "Belum".
 8. **Warga dan publik memantau.** *Peta Laporan* menampilkan sebaran laporan dengan filter; *Dashboard* menampilkan tren, perbandingan, dan insight otomatis lengkap dengan sumber serta waktu pembaruan data.
 
@@ -97,8 +99,8 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
 
 1. **Clone Repository**
    ```bash
-   git clone https://github.com/revaerica/WIA-OTW-jdi-nasabah-prioritas.git
-   cd WIA-OTW-jdi-nasabah-prioritas
+   git clone git@github.com:matchaavboba/FE-WIA.git
+   cd FE-WIA
    ```
 
 2. **Install Dependencies**
@@ -106,27 +108,28 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    npm install
    ```
 
-3. **Hubungkan Supabase**
-   - Buat project di Supabase.
-   - Dari **Project Settings → API**, salin Project URL dan `anon`/publishable key.
-   - Salin template lalu isi `.env.local` (jangan commit file ini):
+3. **Konfigurasi environment**
+   - Supabase opsional untuk menjalankan UI dengan data offline. Untuk koneksi live, buat project Supabase dan dari **Project Settings → API** salin Project URL serta `anon`/publishable key.
+   - Salin template ke `.env.local` (jangan commit file ini):
      ```powershell
      Copy-Item .env.example .env.local
      ```
-   - Isi nilai berikut:
+   - Untuk UI offline, pertahankan `NEXT_PUBLIC_USE_MOCK=true`. Untuk koneksi live, isi variabel project berikut dan ubah flag ke `false`:
      ```env
      NEXT_PUBLIC_APP_URL=http://localhost:3000
+     NEXT_PUBLIC_USE_MOCK=false
      NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
      NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-or-publishable-key>
      SUPABASE_SERVICE_ROLE_KEY=<service-role-secret>
      ```
-   - Ambil `SUPABASE_SERVICE_ROLE_KEY` dari pengaturan API/secret keys. Kunci ini hanya untuk server; jangan pernah menambahkan awalan `NEXT_PUBLIC_` atau mengirimkannya ke orang lain.
+   - `SUPABASE_SERVICE_ROLE_KEY` hanya untuk server. Jangan beri awalan `NEXT_PUBLIC_`, masukkan ke bundle browser, atau commit nilainya.
 
-4. **Buat skema database**
-   - Di Supabase, buka **SQL Editor**.
-   - Untuk project Supabase yang akan dipakai sungguhan, jalankan migrasi `001` sampai `015` secara berurutan. Jangan jalankan `016_seed_laporan_simulasi.sql` pada database live; file itu hanya untuk project demo terpisah. Detailnya ada di [supabase/README.md](./supabase/README.md).
-   - Pastikan tabel kategori terisi dengan menjalankan `SELECT id, nama, slug FROM public.kategori;`.
-   - Untuk fitur foto, buat bucket Storage privat bernama `laporan-foto`.
+4. **Siapkan Supabase (opsional untuk UI offline)**
+   - Sebelum menjalankan migrasi, cocokkan daftar file di `supabase/migrations/` dengan backend. Saat README ini diperbarui, nomor `012` dan `014` tidak tersedia; jangan mengasumsikan urutan migrasi lengkap atau menerapkannya ke database production tanpa konfirmasi backend.
+   - Jangan jalankan `016_seed_laporan_simulasi.sql` pada project production.
+   - Setelah skema dikonfirmasi dan diterapkan, verifikasi kategori dengan `SELECT id, nama, slug FROM public.kategori;`.
+   - Bucket foto dan kebijakan akses Storage perlu disiapkan backend; alur upload UI belum selesai end-to-end.
+   - Panduan yang ada: [supabase/README.md](./supabase/README.md).
 
 5. **Jalankan aplikasi**
    ```bash
@@ -135,7 +138,7 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    Buka `http://localhost:3000`. Jika mengubah `.env.local`, hentikan lalu jalankan ulang server agar konfigurasi terbaca.
 
    - Untuk kerja FE tanpa Supabase, biarkan `NEXT_PUBLIC_USE_MOCK=true`. Halaman memakai berkas data lokal; laporan baru pada mode ini tersimpan di browser yang digunakan.
-   - Untuk menguji koneksi database, isi tiga variabel Supabase dengan nilai project milik tim dan set `NEXT_PUBLIC_USE_MOCK=false`.
+   - Untuk menguji koneksi database, isi URL, anon key, dan service role key Supabase milik project tim; set `NEXT_PUBLIC_USE_MOCK=false` lalu restart server. Service role key wajib server-only.
    - Pendaftaran dan login memakai Supabase Auth. Trigger migrasi `005_tabel_pengguna.sql` membuat profil dengan role `warga`; role `petugas` dan `admin` hanya dapat diberikan administrator, bukan dipilih lewat pendaftaran publik.
    - Tanpa konfigurasi Supabase, pendaftaran/login menampilkan error dan tidak membuat akun lokal palsu. Unggah foto belum tersambung end-to-end ke Supabase Storage.
 
@@ -144,32 +147,48 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    npm run build
    npm run start
    ```
+   Untuk deployment, atur environment variable di secret manager hosting, set `NEXT_PUBLIC_APP_URL` ke domain HTTPS, `NEXT_PUBLIC_USE_MOCK=false`, serta konfigurasi Site URL dan allowed redirect URLs Supabase ke domain tersebut. Uji login, laporan, hak akses, peta, dan foto di staging sebelum rilis.
 
 ---
 
-## 5. Progress Saat Ini
+## 5. Status Proyek dan Verifikasi
 
-Pada tahap **First Draft Submission (01 November 2026)**, progres tim saat ini berfokus pada **tahap pembuatan UI/UX, arsitektur informasi, wireframing, dan interactive prototype di Figma**, sembari menyiapkan fondasi arsitektur kode dan basis data:
+Status ini membedakan fondasi yang tersedia dengan integrasi yang masih harus diuji pada environment tim:
 
 | Modul / Komponen | Rincian Pekerjaan | Status Saat Ini |
 | :--- | :--- | :--- |
-| Perancangan UI/UX (Figma) | Perancangan alur interaksi, wireframe layar utama, design system, dan prototype interaktif di Figma. | Sedang Berjalan (Fokus Utama) |
-| Perancangan Sistem & Data | Penyusunan flowchart alur sistem, user flow swimlane, arsitektur sistem, dan skema PostGIS. | Selesai |
-| Inisialisasi Repositori | Setup proyek Next.js 14 App Router, konfigurasi TypeScript, Tailwind CSS, dan dokumentasi teknis. | Selesai |
-| Implementasi Antarmuka Web | Halaman publik, form pelaporan, pelacakan, dan peta tersedia; beberapa panel petugas masih perlu dihubungkan ke data operasional. | Berjalan |
-| Integrasi Backend & Basis Data | Login/daftar Supabase Auth, profil, dan alur role sudah tersambung. Uji end-to-end masih diperlukan; unggah foto, notifikasi real-time, serta beberapa modul operasional masih perlu dilengkapi. | Fondasi tersedia; integrasi belum lengkap |
+| Aplikasi Next.js | Halaman beranda, laporan, peta, Papan Tanggap, autentikasi, profil, dan API tersedia. | Terimplementasi; build terverifikasi |
+| Tes logika/backend | Tes state machine, validasi, koordinat, rate limit, sanitasi, dan upload dijalankan lokal. | Lulus lokal; bukan pengganti tes staging |
+| Supabase Auth dan database live | Memerlukan kredensial, migrasi yang dikonfirmasi, serta akun uji milik tim. | Belum dapat diverifikasi di environment ini |
+| Supabase Storage foto | Alur upload/baca foto belum selesai end-to-end. | Perlu dilengkapi |
+| Deployment | Perlu environment production, redirect Supabase, dan uji staging. | Belum diverifikasi |
+
+Perintah validasi yang tersedia:
+
+```bash
+npm run build
+```
+
+Tes backend yang didefinisikan di `__tests__/backend.test.ts` dan `__tests__/unit_security_logic.ts` dapat dijalankan dengan `ts-node` setelah dependencies terpasang. Script `npm test` di `package.json` menunjuk ke Jest, tetapi Jest belum tercantum sebagai dependency proyek.
 
 ---
 
 ## 6. Struktur Dokumentasi
 
 ```
-WIA-OTW-jdi-nasabah-prioritas/
+FE-WIA/
 ├── README.md
+├── supabase/
+│   ├── README.md
+│   ├── migrations/
+│   └── tests/
 └── docs/
-    ├── WIA_FSDMIA2026_OTW-jdi-nasabah-prioritas.pdf   (PDF First Draft yang dikumpulkan)
+    ├── API.md
+    ├── DATA.md
+    ├── FRONTEND_HANDOFF.md
+    ├── SECURITY.md
     └── images/
-        ├── Desktop.png              (preview landing page)
+        ├── Desktop.png
         ├── flowchart-sistem.png
         ├── user-flow.png
         └── arsitektur-sistem.png
