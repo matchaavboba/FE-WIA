@@ -337,12 +337,13 @@ export default function Beranda() {
                   kecamatanFilter={filterKec === 'Semua' ? 'semua' : filterKec}
                   statusFilter={filterStatus}
                   kategoriFilter={filterKategori}
+                  warnaBerdasarkan="kategori"
                 />
               </div>
 
               {/* Category legend */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-navy/10 px-4 py-3">
-                {KATEGORI.slice(0, 5).map((k) => (
+                {KATEGORI.map((k) => (
                   <span key={k.slug} className="flex items-center gap-1.5 text-[10px] font-semibold text-navy">
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: k.warna }} aria-hidden="true" />
                     {k.nama}
