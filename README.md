@@ -14,7 +14,7 @@ RAMPUNG adalah platform web pelaporan keluhan warga dan analisis data publik ber
 
 Pelapor menjadi penentu akhir apakah suatu laporan benar-benar *rampung*. Platform ini ditujukan bagi warga Kota Surakarta (5 kecamatan, 54 kelurahan, 587.646 jiwa; Dispendukcapil Kota Surakarta, 2023), petugas instansi, dan publik yang ingin memantau kinerja layanan.
 
-![Preview landing page RAMPUNG](docs/images/Desktop.png)
+![Screenshot aktual halaman beranda RAMPUNG dari aplikasi web](docs/images/Desktop.png)
 
 ### Masalah yang Diselesaikan
 
