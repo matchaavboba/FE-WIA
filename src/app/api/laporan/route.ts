@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
-    const auth = await dapatkanKonteksAuth();
+    const auth = await dapatkanKonteksAuth(req.headers.get('authorization') || undefined);
 
     // 1. Rate Limiting: 5 laporan/jam untuk IP anonim, 10/jam untuk user login
     const maxLimit = auth.isAuthenticated ? 10 : 5;
@@ -61,12 +61,41 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return apiError(
         'VALIDATION_ERROR',
-        parsed.error.errors[0]?.message || 'Input data laporan tidak valid',
+        parsed.error.issues[0]?.message || 'Input data laporan tidak valid',
         parsed.error.format()
       );
     }
 
     const data = parsed.data;
+
+    // Validate anonymous reports when Turnstile is configured on the server.
+    if (process.env.TURNSTILE_SECRET_KEY && !auth.isAuthenticated) {
+      if (!data.turnstile_token) {
+        return apiError('VALIDATION_ERROR', 'Verifikasi anti-bot Turnstile wajib disertakan untuk pelaporan.');
+      }
+
+      const turnstileBody = new URLSearchParams({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: data.turnstile_token,
+        remoteip: ip,
+      });
+
+      try {
+        const verification = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: turnstileBody,
+          signal: AbortSignal.timeout(5000),
+        });
+        const result = await verification.json();
+        if (!verification.ok || !result.success) {
+          return apiError('VALIDATION_ERROR', 'Verifikasi anti-bot gagal. Silakan coba kembali.');
+        }
+      } catch (error) {
+        console.error('[laporan] Turnstile verification failed:', error);
+        return apiError('SERVICE_UNAVAILABLE', 'Layanan verifikasi anti-bot sedang tidak tersedia.');
+      }
+    }
 
     // 4. Lapisan Validasi Cerdas (Rule-Based + AI Generatif Fallback)
     const validasiKonten = await evaluasiLaporanCerdas(data.judul, data.deskripsi);

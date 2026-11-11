@@ -7,12 +7,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 
-export function getSupabaseServerClient() {
+export function getSupabaseServerClient(explicitAuthHeader?: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key';
 
-  const reqHeaders = headers();
-  const authHeader = reqHeaders.get('authorization') || '';
+  const authHeader = explicitAuthHeader || headers().get('authorization') || '';
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {

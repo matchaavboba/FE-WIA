@@ -117,8 +117,10 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
      NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
      NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-or-publishable-key>
      SUPABASE_SERVICE_ROLE_KEY=<service-role-secret>
+     NEXT_PUBLIC_TURNSTILE_SITE_KEY=<turnstile-site-key>
+     TURNSTILE_SECRET_KEY=<turnstile-secret-key>
      ```
-   - `SUPABASE_SERVICE_ROLE_KEY` hanya untuk server. Jangan beri awalan `NEXT_PUBLIC_`, masukkan ke bundle browser, atau commit nilainya.
+   - `SUPABASE_SERVICE_ROLE_KEY` dan `TURNSTILE_SECRET_KEY` hanya untuk server. Jangan beri awalan `NEXT_PUBLIC_` pada key rahasia, masukkan ke bundle browser, atau commit nilainya. Turnstile bersifat opsional; jika secret key diaktifkan, pasang site key pasangannya pada FE.
 
 4. **Siapkan Supabase (opsional untuk UI offline)**
    - Cocokkan daftar file di `supabase/migrations/` dengan backend sebelum migrasi. Nomor `012` belum tersedia. Migrasi `014_storage_buckets.sql` dan hotfix dashboard `017_fix_fn_dashboard_waktu_penanganan.sql` telah disinkronkan; terapkan hotfix 017 pada staging dan verifikasi endpoint dashboard sebelum deploy.
@@ -136,7 +138,7 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    - Untuk kerja FE tanpa Supabase, biarkan `NEXT_PUBLIC_USE_MOCK=true`. Halaman memakai berkas data lokal; laporan baru pada mode ini tersimpan di browser yang digunakan.
    - Untuk menguji koneksi database, isi URL, anon key, dan service role key Supabase milik project tim; set `NEXT_PUBLIC_USE_MOCK=false` lalu restart server. Service role key wajib server-only.
    - Pendaftaran dan login memakai Supabase Auth. Trigger migrasi `005_tabel_pengguna.sql` membuat profil dengan role `warga`; role `petugas` dan `admin` hanya dapat diberikan administrator, bukan dipilih lewat pendaftaran publik.
-   - Tanpa konfigurasi Supabase, pendaftaran/login menampilkan error dan tidak membuat akun lokal palsu. Di mode live, form meminta signed upload URL, mengunggah foto ke bucket `laporan-foto`, lalu mengirim storage path ke API. Alur ini perlu diuji dengan kredensial dan kebijakan bucket project Supabase tim.
+   - Tanpa konfigurasi Supabase, pendaftaran/login menampilkan error dan tidak membuat akun lokal palsu. Di mode live, foto laporan diunggah sebagai `multipart/form-data`; server memeriksa magic bytes dan ukuran sebelum menyimpan ke bucket `laporan-foto`, lalu FE mengirim storage path ke API. Alur ini perlu diuji dengan kredensial dan kebijakan bucket project Supabase tim.
 
 6. **Build Produksi**
    ```bash

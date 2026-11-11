@@ -15,8 +15,8 @@ export interface AuthContext {
   isAuthenticated: boolean;
 }
 
-export async function dapatkanKonteksAuth(): Promise<AuthContext> {
-  const supabase = getSupabaseServerClient();
+export async function dapatkanKonteksAuth(authHeader?: string): Promise<AuthContext> {
+  const supabase = getSupabaseServerClient(authHeader);
 
   const {
     data: { user },
@@ -45,4 +45,3 @@ export async function dapatkanKonteksAuth(): Promise<AuthContext> {
     isAuthenticated: true,
   };
 }
-

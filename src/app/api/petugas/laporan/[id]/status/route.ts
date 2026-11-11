@@ -17,7 +17,7 @@ export async function PATCH(
 ) {
   try {
     const laporanId = params.id;
-    const auth = await dapatkanKonteksAuth();
+    const auth = await dapatkanKonteksAuth(req.headers.get('authorization') || undefined);
 
     if (!auth.isAuthenticated || (auth.role !== 'petugas' && auth.role !== 'admin')) {
       return apiError('FORBIDDEN', 'Hanya petugas atau admin yang berhak mengubah status tiket');
@@ -114,4 +114,3 @@ export async function PATCH(
     return apiError('INTERNAL_ERROR', 'Terjadi kesalahan sistem saat memperbarui status');
   }
 }
-
