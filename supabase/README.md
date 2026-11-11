@@ -20,19 +20,20 @@ Seluruh berkas SQL di folder `supabase/migrations/` disusun secara terurut dan b
 12. `013_update_data_penduduk.sql` — Sinkronisasi jumlah penduduk Dispendukcapil Surakarta (Semester 2 2023).
 13. `014_storage_buckets.sql` — Bucket foto laporan dan kebijakan akses Storage.
 14. `015_insert_rekap_ulas.sql` — Rekapitulasi agregat resmi aduan ULAS 2023 dari Portal Data Jateng.
-15. `016_seed_laporan_simulasi.sql` — 200 baris data contoh untuk pengujian UI (`is_simulasi = true`); hanya untuk project demo terpisah.
+15. `017_fix_fn_dashboard_waktu_penanganan.sql` — Memastikan tipe hasil median dan rata-rata waktu penanganan sesuai dengan `RETURNS TABLE`.
+16. `016_seed_laporan_simulasi.sql` — 200 baris data contoh untuk pengujian UI (`is_simulasi = true`); hanya untuk project demo terpisah.
 
 ---
 
 ## Cara Menjalankan
 
 ### Opsi A: Lewat Supabase SQL Editor Web
-Buka project Supabase Anda -> menu **SQL Editor** -> jalankan file 001 s/d 015 yang tersedia secara berurutan; nomor 012 belum tersedia. Tinjau kebijakan bucket publik di migrasi 014 sebelum menjalankannya. Jangan jalankan 016 pada project live agar data contoh tidak tercampur dengan laporan warga.
+Buka project Supabase Anda -> menu **SQL Editor** -> jalankan file 001 s/d 015, lalu 017; nomor 012 belum tersedia. Migrasi 016 hanya untuk project demo/staging terpisah dan tidak diperlukan oleh 017. Tinjau kebijakan bucket publik di migrasi 014 sebelum menjalankannya. Jangan jalankan 016 pada project live agar data contoh tidak tercampur dengan laporan warga.
 
 ### Opsi B: Lewat psql / Terminal
 ```bash
 psql "postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/postgres" -f supabase/migrations/001_extensions.sql
-# ... ulangi sampai 015
+# ... ulangi sampai 015, lalu jalankan 017
 ```
 
 ### Opsi C: Menjalankan Pengujian Hak Akses RLS

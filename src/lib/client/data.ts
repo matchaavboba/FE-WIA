@@ -275,7 +275,8 @@ export async function kirimLaporan(payload: BuatLaporanPayload): Promise<{
     if (USE_MOCK) {
       const infoKat = KATEGORI_NAMA_MAP[payload.kategori_slug] || KATEGORI_NAMA_MAP['penambalan-aspal'];
       const now = new Date().toISOString();
-      const kodeBaru = `RMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+      const tahun = String(new Date().getFullYear()).slice(-2);
+      const kodeBaru = `RMP-${tahun}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
       const laporanDemo: Laporan = {
         id: `demo-${Date.now()}`,
         kode_lacak: kodeBaru,

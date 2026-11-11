@@ -7,6 +7,7 @@
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
 import { periksaRateLimit, hashIP } from '@/lib/server/rate-limit';
+import { periksaKontenLaporan } from '@/lib/server/sanitizer';
 import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 import { formatBanyakUrlFoto } from '@/lib/server/upload';
 
@@ -53,6 +54,15 @@ export async function GET(
       return apiError('NOT_FOUND', 'Laporan dengan kode lacak tersebut tidak ditemukan.');
     }
 
+    const hasilAturan = periksaKontenLaporan(laporan.judul || '', laporan.deskripsi || '');
+    const penanda = Array.isArray(laporan.penanda) ? [...laporan.penanda] : [];
+    if (
+      hasilAturan.penanda.length > 0 &&
+      !penanda.includes('perlu_verifikasi_tambahan')
+    ) {
+      penanda.push('perlu_verifikasi_tambahan');
+    }
+
     // 3. Ambil linimasa status history
     const { data: history, error: historyError } = await supabasePublic
       .from('status_history')
@@ -71,6 +81,7 @@ export async function GET(
     return apiSukses({
       laporan: {
         ...laporan,
+        penanda,
         foto_sebelum_paths: formatBanyakUrlFoto(laporan.foto_sebelum_paths || []),
         foto_sesudah_paths: formatBanyakUrlFoto(laporan.foto_sesudah_paths || []),
       },

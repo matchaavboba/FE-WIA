@@ -16,7 +16,7 @@ const SURAKARTA_BOUNDS = {
 };
 
 // PostgreSQL accepts UUIDs without RFC version/variant bits; the seeded reference IDs use that form.
-const POSTGRES_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const POSTGRES_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const StatusLaporanEnum = z.enum([
   'masuk',
@@ -68,7 +68,7 @@ export type BuatLaporanInput = z.infer<typeof BuatLaporanInputSchema>;
 
 // Schema respons laporan publik (bebas PII)
 export const LaporanPublikItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().regex(POSTGRES_UUID_PATTERN, 'ID laporan tidak valid'),
   kode_lacak: z.string(),
   judul: z.string(),
   deskripsi: z.string(),

@@ -121,10 +121,10 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    - `SUPABASE_SERVICE_ROLE_KEY` hanya untuk server. Jangan beri awalan `NEXT_PUBLIC_`, masukkan ke bundle browser, atau commit nilainya.
 
 4. **Siapkan Supabase (opsional untuk UI offline)**
-   - Cocokkan daftar file di `supabase/migrations/` dengan backend sebelum migrasi. Nomor `012` belum tersedia; migrasi `014_storage_buckets.sql` kini disinkronkan dari backend. Pastikan migrasi storage ini ditinjau sebelum diterapkan ke database production.
+   - Cocokkan daftar file di `supabase/migrations/` dengan backend sebelum migrasi. Nomor `012` belum tersedia. Migrasi `014_storage_buckets.sql` dan hotfix dashboard `017_fix_fn_dashboard_waktu_penanganan.sql` telah disinkronkan; terapkan hotfix 017 pada staging dan verifikasi endpoint dashboard sebelum deploy.
    - Jangan jalankan `016_seed_laporan_simulasi.sql` pada project production.
    - Setelah skema dikonfirmasi dan diterapkan, verifikasi kategori dengan `SELECT id, nama, slug FROM public.kategori;`.
-   - Migrasi backend `014_storage_buckets.sql` membuat bucket `laporan-foto` publik dengan batas 5 MB dan kebijakan upload. Terapkan hanya setelah ditinjau; unggahan foto live perlu dites pada project staging.
+   - Migrasi backend `014_storage_buckets.sql` membuat bucket `laporan-foto` publik dengan batas 5 MB dan kebijakan upload. Terapkan hanya setelah ditinjau; unggahan foto live perlu dites pada project staging. Migrasi `010_seed_referensi.sql` menggunakan ID kategori terbaru dari BE, tetapi upsert berdasarkan slug tidak mengganti ID pada database yang sudah berisi kategori dengan ID lama.
    - Panduan yang ada: [supabase/README.md](./supabase/README.md).
 
 5. **Jalankan aplikasi**

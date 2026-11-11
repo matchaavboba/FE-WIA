@@ -7,6 +7,7 @@
 import { NextRequest } from 'next/server';
 import { LaporanPublikFilterSchema } from '@/lib/contracts/laporan';
 import { apiSukses, apiError } from '@/lib/server/response';
+import { periksaKontenLaporan } from '@/lib/server/sanitizer';
 import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 import { dapatkanThumbnailUrl, formatBanyakUrlFoto } from '@/lib/server/upload';
 
@@ -91,6 +92,14 @@ export async function GET(req: NextRequest) {
     const sanitizedItems = items.map((item: any) => {
       const fotoSebelumUrls = formatBanyakUrlFoto(item.foto_sebelum_paths || []);
       const fotoSesudahUrls = formatBanyakUrlFoto(item.foto_sesudah_paths || []);
+      const hasilAturan = periksaKontenLaporan(item.judul || '', item.deskripsi || '');
+      const penanda = Array.isArray(item.penanda) ? [...item.penanda] : [];
+      if (
+        hasilAturan.penanda.length > 0 &&
+        !penanda.includes('perlu_verifikasi_tambahan')
+      ) {
+        penanda.push('perlu_verifikasi_tambahan');
+      }
       const thumbnail = item.foto_sebelum_paths?.[0]
         ? dapatkanThumbnailUrl(item.foto_sebelum_paths[0])
         : null;
@@ -103,6 +112,7 @@ export async function GET(req: NextRequest) {
           kategori: item.kategori,
           kelurahan: item.kelurahan,
           status: item.status,
+          penanda,
           thumbnail,
           jumlah_dukungan: item.jumlah_dukungan,
           created_at: item.created_at,
@@ -112,6 +122,7 @@ export async function GET(req: NextRequest) {
       }
       return {
         ...item,
+        penanda,
         foto_sebelum_paths: fotoSebelumUrls,
         foto_sesudah_paths: fotoSesudahUrls,
         thumbnail,

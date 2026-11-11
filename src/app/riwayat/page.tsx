@@ -321,9 +321,16 @@ function RiwayatContent() {
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs font-mono font-bold text-navy">#{laporan.kode_lacak}</span>
-                      <span className="text-[10px] font-extrabold bg-slate text-white px-2 py-0.5 rounded">
-                        {laporan.status.replace(/_/g, ' ')}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {laporan.penanda?.includes('perlu_verifikasi_tambahan') && (
+                          <span className="text-[9px] font-extrabold bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded border border-rose-300">
+                            Perlu Verifikasi
+                          </span>
+                        )}
+                        <span className="text-[10px] font-extrabold bg-slate text-white px-2 py-0.5 rounded">
+                          {laporan.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
                     </div>
                     <h3 className="text-xs font-extrabold text-navy leading-snug line-clamp-1">{laporan.judul}</h3>
                     <p className="text-[11px] text-navy/70 mt-1 flex items-center gap-1">
@@ -398,6 +405,12 @@ function RiwayatContent() {
                         ? `Status: ${currentLap.status.replace(/_/g, ' ')}`
                         : 'Status belum tersedia'}
                     </span>
+                    {currentLap?.penanda?.includes('perlu_verifikasi_tambahan') && (
+                      <span className="text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 px-2.5 py-1 rounded-md flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Perlu verifikasi petugas
+                      </span>
+                    )}
                   </div>
 
                   <button
@@ -416,6 +429,11 @@ function RiwayatContent() {
                 <p className="text-xs sm:text-sm text-navy/80 leading-relaxed font-medium">
                   {currentLap?.deskripsi || 'Periksa kembali kode lacak atau coba lagi setelah data berhasil dimuat.'}
                 </p>
+                {currentLap?.penanda?.includes('perlu_verifikasi_tambahan') && (
+                  <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-relaxed text-rose-900">
+                    Sistem menandai laporan ini untuk verifikasi tambahan oleh petugas. Penanda ini bukan keputusan otomatis atas laporan.
+                  </p>
+                )}
               </div>
 
               {/* ── Linimasa status laporan ── */}

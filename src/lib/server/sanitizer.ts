@@ -26,6 +26,15 @@ const KATA_KUNCI_SPAM: string[] = [
   'tanpa jaminan',
   'bunga rendah',
   'promo diskon',
+  'joki',
+  'open joki',
+  'jasa joki',
+  'jasa tugas',
+  'jual beli',
+  'followers',
+  'top up',
+  'topup',
+  'dm ig',
   'wa.me/',
   'bit.ly/',
   't.me/',
@@ -117,13 +126,13 @@ export async function evaluasiLaporanCerdas(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500); // Batas 2.5 detik agar respon tetap cepat
 
-    const promptText = `Anda adalah asisten AI resmi verifikasi kelayakan laporan aduan warga Kota Surakarta (Platform RAMPUNG).
+    const promptText = `Anda membantu menilai relevansi laporan warga Kota Surakarta (Platform RAMPUNG) untuk ditinjau petugas.
 Tugas Anda:
-1. Evaluasi apakah laporan ini nyata, wajar, dan bukan hoax/lelucon/prank/ujaran kebencian.
+1. Evaluasi apakah laporan berkaitan dengan fasilitas, infrastruktur, atau layanan publik, atau berisi spam, iklan, jasa joki, promosi komersial, atau hoax.
 2. Tentukan tingkat urgensi (rendah/sedang/tinggi).
-3. Berikan skor kelayakan (0 sampai 100).
-4. Berikan saran singkat dan ramah jika pelapor perlu melengkapi detail lokasi/kondisi.
-5. Jika ada indikasi anomali/palsu, beri tahu alasannya.
+3. Berikan skor kelayakan fasilitas publik (0 sampai 100). Jika spam/joki/iklan, skor harus di bawah 30.
+4. Berikan saran singkat jika pelapor perlu melengkapi detail lokasi/kondisi.
+5. Jika ada indikasi anomali/spam/joki, set "indikasi_anomali": true dan sebutkan alasannya.
 
 Data Laporan:
 - Kategori: ${kategoriNama}

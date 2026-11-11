@@ -14,14 +14,14 @@ import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin
 import { randomBytes } from 'crypto';
 
 function buatKodeLacakKriptografis(): string {
-  const tahun = new Date().getFullYear();
+  const tahun = String(new Date().getFullYear()).slice(-2);
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = randomBytes(4);
   let randomPart = '';
   for (let i = 0; i < 4; i++) {
     randomPart += chars[bytes[i] % chars.length];
   }
-  // Format sesuai UI/UX RAMPUNG: RMP-2026-XXXX (misal: RMP-2026-A7X9)
+  // Keep the tracking code within the database column's VARCHAR(12) limit.
   return `RMP-${tahun}-${randomPart}`;
 }
 
