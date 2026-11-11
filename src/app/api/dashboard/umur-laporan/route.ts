@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server';
 import { DashboardFilterSchema } from '@/lib/contracts/dashboard';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,11 +20,11 @@ export async function GET(req: NextRequest) {
 
     const { kategori, kecamatan, sumber } = parsed.data;
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat umur laporan.');
     }
 
-    const { data, error } = await supabaseAdmin.rpc('fn_dashboard_umur_laporan', {
+    const { data, error } = await getSupabasePublicClient().rpc('fn_dashboard_umur_laporan', {
       p_kategori_slug: kategori || null,
       p_kecamatan_kode: kecamatan || null,
       p_sumber: sumber === 'simulasi' ? 'simulasi' : 'asli',

@@ -6,11 +6,13 @@
 
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient } from '@/lib/server/supabase-server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabasePublicClient()
       .from('sumber_data')
       .select('*')
       .order('nama', { ascending: true });

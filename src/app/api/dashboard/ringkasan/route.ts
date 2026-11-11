@@ -5,32 +5,35 @@
 import { NextRequest } from 'next/server';
 import { RingkasanLanding } from '@/lib/contracts/dashboard';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(_req: NextRequest) {
   try {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat ringkasan langsung.');
     }
 
     const now = new Date();
     const mulaiBulan = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const akhirBulan = now.toISOString();
+    const supabasePublic = getSupabasePublicClient();
     const [total, selesai, dikerjakan] = await Promise.all([
-      supabaseAdmin
+      supabasePublic
         .from('laporan_publik')
         .select('id', { count: 'exact', head: true })
         .eq('is_simulasi', false)
         .gte('created_at', mulaiBulan)
         .lte('created_at', akhirBulan),
-      supabaseAdmin
+      supabasePublic
         .from('laporan_publik')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'selesai')
         .eq('is_simulasi', false)
         .gte('created_at', mulaiBulan)
         .lte('created_at', akhirBulan),
-      supabaseAdmin
+      supabasePublic
         .from('laporan_publik')
         .select('id', { count: 'exact', head: true })
         .in('status', ['ditinjau', 'sedang_ditangani'])

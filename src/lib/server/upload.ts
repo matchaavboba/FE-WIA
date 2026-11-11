@@ -53,3 +53,30 @@ export function generateNamaFileAcak(ekstensi: string = 'webp'): string {
   return `${timestamp}-${randomStr}.${ekstensi}`;
 }
 
+export function formatUrlFoto(path: string): string {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const cleanPath = path.replace(/^\/+/, '');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co';
+  return `${supabaseUrl}/storage/v1/object/public/laporan-foto/${cleanPath}`;
+}
+
+export function formatBanyakUrlFoto(paths: string[] = []): string[] {
+  if (!Array.isArray(paths)) return [];
+  return paths.map(formatUrlFoto);
+}
+
+export function dapatkanThumbnailUrl(path: string, lebar: number = 400, tinggi: number = 300): string {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) {
+    if (path.includes('unsplash.com')) {
+      return `${path}&w=${lebar}&h=${tinggi}&fit=crop`;
+    }
+    return path;
+  }
+
+  const cleanPath = path.replace(/^\/+/, '');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co';
+  return `${supabaseUrl}/storage/v1/render/image/public/laporan-foto/${cleanPath}?width=${lebar}&height=${tinggi}&resize=contain`;
+}

@@ -137,6 +137,7 @@ BEGIN
   JOIN public.kategori k ON l.kategori_id = k.id
   LEFT JOIN public.kelurahan kel ON l.kelurahan_id = kel.id
   WHERE l.kategori_id = p_kategori_id
+    AND l.is_simulasi = FALSE
     AND l.status NOT IN ('ditolak')
     AND ST_DWithin(
       l.koordinat::geography,
@@ -336,8 +337,8 @@ BEGIN
     d.singkatan::TEXT AS dinas_singkatan,
     COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (
       ORDER BY EXTRACT(EPOCH FROM (sh_selesai.created_at - l.created_at)) / 86400.0
-    ), 0.0) AS median_hari,
-    COALESCE(AVG(EXTRACT(EPOCH FROM (sh_selesai.created_at - l.created_at)) / 86400.0), 0.0) AS rata_rata_hari,
+    ), 0.0)::DOUBLE PRECISION AS median_hari,
+    COALESCE(AVG(EXTRACT(EPOCH FROM (sh_selesai.created_at - l.created_at)) / 86400.0), 0.0)::DOUBLE PRECISION AS rata_rata_hari,
     COUNT(*)::BIGINT AS jumlah_selesai,
     COUNT(*) FILTER (
       WHERE EXTRACT(EPOCH FROM (sh_selesai.created_at - l.created_at)) / 86400.0 > k.sla_hari
@@ -532,4 +533,3 @@ GRANT EXECUTE ON FUNCTION public.fn_dashboard_waktu_penanganan TO anon, authenti
 GRANT EXECUTE ON FUNCTION public.fn_dashboard_per_kapita TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.fn_dashboard_konfirmasi TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.fn_dashboard_umur_laporan TO anon, authenticated;
-

@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server';
 import { DashboardFilterSchema } from '@/lib/contracts/dashboard';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,11 +21,11 @@ export async function GET(req: NextRequest) {
     const { periode_mulai, periode_akhir, kategori, sumber } = parsed.data;
     const tahunBerjalan = new Date().getFullYear();
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat data per kapita.');
     }
 
-    const { data, error } = await supabaseAdmin.rpc('fn_dashboard_per_kapita', {
+    const { data, error } = await getSupabasePublicClient().rpc('fn_dashboard_per_kapita', {
       p_periode_mulai: periode_mulai || `${tahunBerjalan}-01-01`,
       p_periode_akhir: periode_akhir || `${tahunBerjalan}-12-31`,
       p_kategori_slug: kategori || null,

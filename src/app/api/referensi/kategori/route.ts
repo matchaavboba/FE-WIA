@@ -6,15 +6,17 @@
 
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat kategori.');
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabasePublicClient()
       .from('kategori')
       .select('id, nama, slug, ikon, sla_hari, is_aktif, dinas:dinas_id(nama, singkatan)')
       .eq('is_aktif', true);

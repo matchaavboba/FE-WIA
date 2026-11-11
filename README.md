@@ -32,7 +32,7 @@ Pelapor menjadi penentu akhir apakah suatu laporan benar-benar *rampung*. Platfo
 - **Dashboard dan Papan Tanggap**: ringkasan, tren, distribusi, kinerja, dan state loading/error/kosong.
 - **Akun**: login, daftar, dan profil menggunakan Supabase Auth. Akun publik mendapat role `warga`; role admin/petugas diberikan oleh administrator.
 - **Validasi backend**: validasi skema dan koordinat, transisi status, pembatasan permintaan, sanitasi konten, dan pemeriksaan magic bytes untuk gambar.
-- **Masih perlu integrasi end-to-end**: unggah dan baca foto Supabase Storage, pengujian autentikasi/role di project Supabase milik tim, serta verifikasi deploy staging/production.
+- **Masih perlu integrasi end-to-end**: pengujian autentikasi/role dan upload foto pada project Supabase milik tim, penyajian foto dari bucket privat, serta verifikasi deploy staging/production.
 
 Data lokal yang tersedia untuk pengembangan bukan data live. Saat mock aktif, laporan baru disimpan di browser dan tidak masuk ke Supabase. Antarmuka tidak menampilkan badge mode; tim tetap harus memastikan sumber data sebelum demo atau deploy.
 
@@ -110,11 +110,7 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
 
 3. **Konfigurasi environment**
    - Supabase opsional untuk menjalankan UI dengan data offline. Untuk koneksi live, buat project Supabase dan dari **Project Settings → API** salin Project URL serta `anon`/publishable key.
-   - Salin template ke `.env.local` (jangan commit file ini):
-     ```powershell
-     Copy-Item .env.example .env.local
-     ```
-   - Untuk UI offline, pertahankan `NEXT_PUBLIC_USE_MOCK=true`. Untuk koneksi live, isi variabel project berikut dan ubah flag ke `false`:
+   - Buat `.env.local` secara lokal (jangan commit file ini). Template `.env.example` tidak disertakan. Untuk UI offline, set `NEXT_PUBLIC_USE_MOCK=true`; untuk koneksi live, set flag ke `false` dan isi:
      ```env
      NEXT_PUBLIC_APP_URL=http://localhost:3000
      NEXT_PUBLIC_USE_MOCK=false
@@ -125,10 +121,10 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    - `SUPABASE_SERVICE_ROLE_KEY` hanya untuk server. Jangan beri awalan `NEXT_PUBLIC_`, masukkan ke bundle browser, atau commit nilainya.
 
 4. **Siapkan Supabase (opsional untuk UI offline)**
-   - Sebelum menjalankan migrasi, cocokkan daftar file di `supabase/migrations/` dengan backend. Saat README ini diperbarui, nomor `012` dan `014` tidak tersedia; jangan mengasumsikan urutan migrasi lengkap atau menerapkannya ke database production tanpa konfirmasi backend.
+   - Cocokkan daftar file di `supabase/migrations/` dengan backend sebelum migrasi. Nomor `012` belum tersedia; migrasi `014_storage_buckets.sql` kini disinkronkan dari backend. Pastikan migrasi storage ini ditinjau sebelum diterapkan ke database production.
    - Jangan jalankan `016_seed_laporan_simulasi.sql` pada project production.
    - Setelah skema dikonfirmasi dan diterapkan, verifikasi kategori dengan `SELECT id, nama, slug FROM public.kategori;`.
-   - Bucket foto dan kebijakan akses Storage perlu disiapkan backend; alur upload UI belum selesai end-to-end.
+   - Migrasi backend `014_storage_buckets.sql` membuat bucket `laporan-foto` publik dengan batas 5 MB dan kebijakan upload. Terapkan hanya setelah ditinjau; unggahan foto live perlu dites pada project staging.
    - Panduan yang ada: [supabase/README.md](./supabase/README.md).
 
 5. **Jalankan aplikasi**
@@ -140,7 +136,7 @@ Lapisan validasi bekerja dengan aturan dan kata kunci (*rule-based*) serta klasi
    - Untuk kerja FE tanpa Supabase, biarkan `NEXT_PUBLIC_USE_MOCK=true`. Halaman memakai berkas data lokal; laporan baru pada mode ini tersimpan di browser yang digunakan.
    - Untuk menguji koneksi database, isi URL, anon key, dan service role key Supabase milik project tim; set `NEXT_PUBLIC_USE_MOCK=false` lalu restart server. Service role key wajib server-only.
    - Pendaftaran dan login memakai Supabase Auth. Trigger migrasi `005_tabel_pengguna.sql` membuat profil dengan role `warga`; role `petugas` dan `admin` hanya dapat diberikan administrator, bukan dipilih lewat pendaftaran publik.
-   - Tanpa konfigurasi Supabase, pendaftaran/login menampilkan error dan tidak membuat akun lokal palsu. Unggah foto belum tersambung end-to-end ke Supabase Storage.
+   - Tanpa konfigurasi Supabase, pendaftaran/login menampilkan error dan tidak membuat akun lokal palsu. Di mode live, form meminta signed upload URL, mengunggah foto ke bucket `laporan-foto`, lalu mengirim storage path ke API. Alur ini perlu diuji dengan kredensial dan kebijakan bucket project Supabase tim.
 
 6. **Build Produksi**
    ```bash

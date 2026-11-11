@@ -7,7 +7,10 @@
 import { NextRequest } from 'next/server';
 import { LaporanPublikFilterSchema } from '@/lib/contracts/laporan';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
+import { dapatkanThumbnailUrl, formatBanyakUrlFoto } from '@/lib/server/upload';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,20 +30,20 @@ export async function GET(req: NextRequest) {
       kecamatan,
       kelurahan,
       status,
-      sumber,
       pencarian,
       cursor,
       limit,
       fields,
     } = parsed.data;
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat data langsung.');
     }
 
-    let query = supabaseAdmin
+    let query = getSupabasePublicClient()
       .from('laporan_publik')
       .select('*')
+      .eq('is_simulasi', false)
       .order('created_at', { ascending: false })
       .limit(limit + 1);
 
@@ -56,11 +59,6 @@ export async function GET(req: NextRequest) {
     if (status) {
       query = query.eq('status', status);
     }
-    if (sumber === 'asli' || sumber === 'semua') {
-      query = query.eq('is_simulasi', false);
-    } else if (sumber === 'simulasi') {
-      query = query.eq('is_simulasi', true);
-    }
     if (pencarian) {
       query = query.ilike('judul', `%${pencarian}%`);
     }
@@ -71,6 +69,12 @@ export async function GET(req: NextRequest) {
     const { data: records, error } = await query;
 
     if (error) {
+      console.error('[GET /api/laporan/publik] Supabase query failed', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return apiError('INTERNAL_ERROR', 'Gagal membaca daftar laporan dari Supabase.');
     }
 
@@ -85,6 +89,12 @@ export async function GET(req: NextRequest) {
 
     // Field selection untuk respons ringkas mobile
     const sanitizedItems = items.map((item: any) => {
+      const fotoSebelumUrls = formatBanyakUrlFoto(item.foto_sebelum_paths || []);
+      const fotoSesudahUrls = formatBanyakUrlFoto(item.foto_sesudah_paths || []);
+      const thumbnail = item.foto_sebelum_paths?.[0]
+        ? dapatkanThumbnailUrl(item.foto_sebelum_paths[0])
+        : null;
+
       if (fields === 'ringkas') {
         return {
           id: item.id,
@@ -93,28 +103,37 @@ export async function GET(req: NextRequest) {
           kategori: item.kategori,
           kelurahan: item.kelurahan,
           status: item.status,
-          thumbnail: item.foto_sebelum_paths?.[0] || null,
+          thumbnail,
           jumlah_dukungan: item.jumlah_dukungan,
           created_at: item.created_at,
           is_simulasi: item.is_simulasi,
           provenance: item.provenance,
         };
       }
-      return item;
+      return {
+        ...item,
+        foto_sebelum_paths: fotoSebelumUrls,
+        foto_sesudah_paths: fotoSesudahUrls,
+        thumbnail,
+      };
     });
 
     return apiSukses(sanitizedItems, {
       cursor_berikutnya: nextCursor,
       sumber: [
         {
-          provenance: sumber === 'simulasi' ? 'simulasi_terkalibrasi' : 'asli',
+          provenance: 'asli',
           nama_sumber: 'Data Publik RAMPUNG Kota Surakarta',
           waktu_pembaruan: new Date().toISOString(),
         },
       ],
       waktu_query: new Date().toISOString(),
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    console.error(
+      '[GET /api/laporan/publik] Unexpected error',
+      err instanceof Error ? err.message : 'Unknown error'
+    );
     return apiError('INTERNAL_ERROR', 'Gagal memuat daftar laporan publik');
   }
 }

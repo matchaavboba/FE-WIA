@@ -138,6 +138,7 @@ export function subscribeStatusLaporan(laporanId: string, onUpdate: (data: any) 
 | Method | Path | Auth | Keterangan |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/laporan` | Publik | Buat laporan aduan baru |
+| `POST` | `/api/laporan/upload-foto` | Publik, rate-limited | Membuat signed upload URL; respons memuat `upload_url`, `file_path`, dan `token` |
 | `GET` | `/api/laporan/publik` | Publik | Daftar laporan publik (cursor pagination: `?limit=20&cursor=...`) |
 | `GET` | `/api/laporan/lacak/:kode` | Publik | Lacak status tiket via kode lacak (kode `RMP-2025-088` tersedia pada data offline) |
 | `GET` | `/api/laporan/serupa` | Publik | Cek laporan terdekat: `?kategori_id=...&latitude=...&longitude=...` |
@@ -160,7 +161,8 @@ export function subscribeStatusLaporan(laporanId: string, onUpdate: (data: any) 
 ## 7. Status Integrasi yang Perlu Diketahui
 
 - Halaman masuk/daftar memakai Supabase Auth dan mengirim access token ke API. Pendaftaran publik selalu membuat role `warga`; role admin/petugas harus diberikan oleh administrator.
-- Upload foto belum terhubung dari pemilih berkas sampai penyimpanan dan pembacaan kembali dari Supabase Storage.
+- Form laporan menggunakan `/api/laporan/upload-foto`, mengunggah berkas dengan signed token Supabase Storage, lalu mengirim storage path ke API laporan. Alur ini perlu diuji di project Supabase tim.
+- Backend terbaru mengatur bucket `laporan-foto` publik lewat migrasi `014_storage_buckets.sql` dan mengubah storage path menjadi URL gambar. FE telah menyamakan batas unggah menjadi 5 MB.
 - Data offline tetap tersedia untuk styling dan alur UI. Kiriman offline tidak masuk ke database dan hanya terlihat di browser yang membuatnya; aplikasi tidak menampilkan banner mode.
 - Untuk live, jalankan hanya migrasi yang sudah dikonfirmasi backend; `016_seed_laporan_simulasi.sql` jangan diterapkan pada project produksi.
 
@@ -171,7 +173,8 @@ export function subscribeStatusLaporan(laporanId: string, onUpdate: (data: any) 
 - [x] Form login/daftar memakai Supabase Auth; pendaftaran publik mendapat role `warga`.
 - [x] Dashboard dan peta mempunyai filter serta state memuat/error/kosong.
 - [ ] Verifikasi form laporan, validasi koordinat, serta transisi dan marker status bersama kontrak API terbaru.
-- [ ] Selesaikan alur foto end-to-end: signed upload URL, unggah, simpan path, dan signed read URL.
+- [x] Hubungkan pemilih foto dengan signed upload URL dan kirim storage path pada pembuatan laporan.
+- [ ] Sediakan signed read URL atau mekanisme terproteksi untuk menampilkan foto dari bucket privat.
 - [ ] Jangan menampilkan data offline seolah-olah data live; UI tidak perlu menampilkan badge mode, tetapi tim harus mengetahui sumber data saat pengujian.
 
 ---
@@ -179,10 +182,16 @@ export function subscribeStatusLaporan(laporanId: string, onUpdate: (data: any) 
 ## 9. Catatan Handoff untuk Backend
 
 - Cocokkan kontrak endpoint dan bentuk respons/error di atas dengan implementasi API yang benar-benar dideploy. Pastikan kategori memakai UUID, bukan nama/slug, dan koordinat divalidasi terhadap wilayah Surakarta.
+- **Perbaikan wajib di backend sebelum laporan live:** ZIP backend memakai Zod 4 `.uuid()` untuk `kategori_id`, tetapi enam UUID kategori hasil seed (misalnya `c1111111-0000-0000-0000-000000000001`) tidak memiliki bit versi/varian RFC. Karena itu Zod menolak ID yang valid untuk kolom UUID PostgreSQL. FE memakai validasi format UUID PostgreSQL (8-4-4-4-12 karakter heksadesimal); samakan validator `kategori_id` pada `BuatLaporanInputSchema` dan `LaporanSerupaQuerySchema` di BE. Terapkan juga untuk `kelurahan_id` bila ID seed wilayah memakai format yang sama. Jangan mengganti ID seed yang sudah direferensikan di database tanpa migrasi relasi yang aman.
 - Pastikan semua endpoint privat memverifikasi access token Supabase dan role di server. Registrasi publik hanya boleh membuat `warga`; pemberian role `petugas`/`admin` harus lewat jalur administrator yang terproteksi.
-- Selesaikan integrasi upload foto dengan Supabase Storage dan kebijakan bucket/RLS. Saat ini UI belum memiliki alur upload dan pembacaan foto yang lengkap.
+- Tinjau kebijakan bucket/RLS `laporan-foto` dan uji signed upload endpoint. Frontend telah meminta signed URL, mengunggah file yang didukung, dan menyimpan storage path pada laporan.
+- Tambahkan/konfirmasi mekanisme signed read URL untuk menampilkan foto dari bucket privat; jangan menganggap storage path sebagai URL publik.
+- Diagnostik lokal: publishable key dapat membaca view `laporan_publik`, tetapi query dengan server secret ditolak Supabase sebagai `Invalid API key`. Endpoint GET publik, referensi, peta, dan dashboard kini memakai publishable key dengan hak minimum; data laporan publik hanya mengambil laporan `sumber=asli`/non-simulasi. Operasi tulis, upload, serta operasi admin/server yang memerlukan hak istimewa tetap membutuhkan server secret yang valid dari project yang sama.
 - Data offline masih dapat ditampilkan jika `NEXT_PUBLIC_USE_MOCK=true`; laporan offline hanya tersimpan di browser dan tidak masuk database. Untuk pengujian API live, nonaktifkan mock dan pastikan error konfigurasi tidak disamarkan menjadi data kosong.
-- File migrasi yang tersedia saat ini bernomor `001`–`013` dan `015`; belum ada file `014`. Mohon konfirmasi apakah migrasi 014 memang tidak diperlukan atau perlu dipulihkan sebelum setup database. Jangan jalankan `016_seed_laporan_simulasi.sql` pada project produksi.
+- File migrasi `014_storage_buckets.sql` telah disalin dari ZIP backend terbaru. Nomor `012` masih tidak tersedia; konfirmasi ke BE apakah memang tidak diperlukan. Jangan jalankan `016_seed_laporan_simulasi.sql` pada project produksi.
+- `laporan_rows.csv` berisi 200 baris dan seluruhnya `is_simulasi=true` dengan provenance simulasi. Jangan impor sebagai laporan live atau tampilkan pada halaman publik.
+- Smoke test lokal: kategori, wilayah, sumber data, laporan publik, peta, dan endpoint dashboard mengembalikan HTTP 200; dashboard waktu penanganan masih 500 karena `fn_dashboard_waktu_penanganan` gagal dengan SQLSTATE `42804` (struktur hasil query tidak sesuai return type). Hasil daftar publik, peta, dan laporan serupa kosong karena database belum memiliki laporan nyata; CSV yang diperiksa seluruhnya data simulasi. Terapkan perbaikan fungsi SQL di `008_views_functions.sql` pada staging setelah ditinjau.
+- Server secret yang tersedia di environment ditolak Supabase sebagai `Invalid API key`. Ganti dengan secret aktif dari project yang sama sebelum menguji pembuatan laporan, upload, autentikasi/operasi server, dan admin. Endpoint terlindungi menolak permintaan tanpa sesi (profil/antrean/laporan pribadi 401, admin 403).
 
 ## 10. Checklist Handoff untuk Deploy
 

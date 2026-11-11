@@ -6,7 +6,7 @@
 
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
     const kecamatan = searchParams.get('kecamatan');
     const status = searchParams.get('status');
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk memuat peta langsung.');
     }
 
-    let query = supabaseAdmin
+    let query = getSupabasePublicClient()
       .from('laporan_publik')
       .select('id, kode_lacak, judul, kategori, kategori_slug, kelurahan, kecamatan, latitude, longitude, status, provenance, is_simulasi, created_at')
       .eq('is_simulasi', false)
@@ -31,9 +31,14 @@ export async function GET(req: NextRequest) {
 
     const { data: records, error } = await query;
     if (error) {
+      console.error('[GET /api/peta/laporan] Supabase query failed', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return apiError('INTERNAL_ERROR', 'Gagal memuat titik laporan dari Supabase.');
     }
-
     const items = records || [];
 
     // Konversi ke GeoJSON FeatureCollection

@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server';
 import { DashboardFilterSchema, CivicInsight } from '@/lib/contracts/dashboard';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,13 +18,14 @@ export async function GET(req: NextRequest) {
       return apiError('VALIDATION_ERROR', 'Parameter filter tidak valid');
     }
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk membuat insight dari data laporan.');
     }
 
     const tahunBerjalan = new Date().getFullYear();
+    const supabasePublic = getSupabasePublicClient();
     const [tren, konfirmasi] = await Promise.all([
-      supabaseAdmin.rpc('fn_dashboard_tren', {
+      supabasePublic.rpc('fn_dashboard_tren', {
         p_periode_mulai: parsed.data.periode_mulai || `${tahunBerjalan}-01-01`,
         p_periode_akhir: parsed.data.periode_akhir || `${tahunBerjalan}-12-31`,
         p_kategori_slug: parsed.data.kategori || null,
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
         p_kelurahan_kode: parsed.data.kelurahan || null,
         p_sumber: 'asli',
       }),
-      supabaseAdmin.rpc('fn_dashboard_konfirmasi', {
+      supabasePublic.rpc('fn_dashboard_konfirmasi', {
         p_periode_mulai: parsed.data.periode_mulai || `${tahunBerjalan}-01-01`,
         p_periode_akhir: parsed.data.periode_akhir || `${tahunBerjalan}-12-31`,
         p_kategori_slug: parsed.data.kategori || null,

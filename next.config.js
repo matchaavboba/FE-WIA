@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // React Leaflet's MapContainer callback ref is not safe for Strict Mode's dev remount.
   reactStrictMode: false,
   poweredByHeader: false, // Menghapus header X-Powered-By untuk keamanan
   images: {

@@ -18,15 +18,16 @@ Seluruh berkas SQL di folder `supabase/migrations/` disusun secara terurut dan b
 10. `010_seed_referensi.sql` — Data awal resmi: 4 dinas (DPUPR, Dishub, DLH, Satpol PP), 6 kategori aduan, 5 kecamatan, dan 54 kelurahan lengkap.
 11. `011_indexes.sql` — Indeks spasial GIST, B-tree komposit (status, waktu), dan GIN full-text search.
 12. `013_update_data_penduduk.sql` — Sinkronisasi jumlah penduduk Dispendukcapil Surakarta (Semester 2 2023).
-13. `015_insert_rekap_ulas.sql` — Rekapitulasi agregat resmi aduan ULAS 2023 dari Portal Data Jateng.
-14. `016_seed_laporan_simulasi.sql` — 200 baris data contoh untuk pengujian UI (`is_simulasi = true`); hanya untuk project demo terpisah.
+13. `014_storage_buckets.sql` — Bucket foto laporan dan kebijakan akses Storage.
+14. `015_insert_rekap_ulas.sql` — Rekapitulasi agregat resmi aduan ULAS 2023 dari Portal Data Jateng.
+15. `016_seed_laporan_simulasi.sql` — 200 baris data contoh untuk pengujian UI (`is_simulasi = true`); hanya untuk project demo terpisah.
 
 ---
 
 ## Cara Menjalankan
 
 ### Opsi A: Lewat Supabase SQL Editor Web
-Buka project Supabase Anda -> menu **SQL Editor** -> jalankan file 001 s/d 015 secara berurutan. Jangan jalankan 016 pada project live agar data contoh tidak tercampur dengan laporan warga.
+Buka project Supabase Anda -> menu **SQL Editor** -> jalankan file 001 s/d 015 yang tersedia secara berurutan; nomor 012 belum tersedia. Tinjau kebijakan bucket publik di migrasi 014 sebelum menjalankannya. Jangan jalankan 016 pada project live agar data contoh tidak tercampur dengan laporan warga.
 
 ### Opsi B: Lewat psql / Terminal
 ```bash

@@ -7,7 +7,8 @@
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
 import { periksaRateLimit, hashIP } from '@/lib/server/rate-limit';
-import { isSupabaseConfigured, supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
+import { formatBanyakUrlFoto } from '@/lib/server/upload';
 
 export async function GET(
   req: NextRequest,
@@ -31,12 +32,13 @@ export async function GET(
       return apiError('NOT_FOUND', 'Laporan dengan kode lacak tersebut tidak ditemukan.');
     }
 
-    if (!isSupabaseConfigured()) {
+    if (!isSupabasePublicConfigured()) {
       return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk pelacakan langsung.');
     }
 
     // 2. Ambil data pelacakan dari Supabase.
-    const { data: laporan, error: laporanError } = await supabaseAdmin
+    const supabasePublic = getSupabasePublicClient();
+    const { data: laporan, error: laporanError } = await supabasePublic
       .from('laporan_publik')
       .select('*')
       .eq('kode_lacak', kode)
@@ -52,7 +54,7 @@ export async function GET(
     }
 
     // 3. Ambil linimasa status history
-    const { data: history, error: historyError } = await supabaseAdmin
+    const { data: history, error: historyError } = await supabasePublic
       .from('status_history')
       .select('status_dari, status_ke, catatan, created_at')
       .eq('laporan_id', laporan.id)
@@ -67,7 +69,11 @@ export async function GET(
     const selisihHari = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 3600 * 24));
 
     return apiSukses({
-      laporan,
+      laporan: {
+        ...laporan,
+        foto_sebelum_paths: formatBanyakUrlFoto(laporan.foto_sebelum_paths || []),
+        foto_sesudah_paths: formatBanyakUrlFoto(laporan.foto_sesudah_paths || []),
+      },
       linimasa: history || [],
       sla: {
         hari_berjalan: selisihHari,

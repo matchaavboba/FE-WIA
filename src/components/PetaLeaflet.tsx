@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Laporan } from '@/lib/client/data';
 import { statusDari } from '@/lib/status';
 import Link from 'next/link';
-import { MapPin, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface PetaLeafletProps {
   laporan: Laporan[];
@@ -55,21 +54,6 @@ export default function PetaLeaflet({
   kecamatanFilter,
   statusFilter,
 }: PetaLeafletProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="w-full h-[520px] bg-slate-900/90 rounded-2xl flex flex-col items-center justify-center text-white/60">
-        <MapPin className="w-10 h-10 animate-bounce text-crimson mb-2" />
-        <p className="text-sm font-semibold">Menyiapkan peta geospasial Surakarta...</p>
-      </div>
-    );
-  }
-
   // Filter titik laporan
   const filtered = laporan.filter((item) => {
     if (kategoriFilter && kategoriFilter !== 'semua' && item.kategori_slug !== kategoriFilter) {

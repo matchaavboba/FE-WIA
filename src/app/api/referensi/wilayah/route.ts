@@ -6,11 +6,13 @@
 
 import { NextRequest } from 'next/server';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient } from '@/lib/server/supabase-server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const { data: kecamatanList, error } = await supabaseAdmin
+    const { data: kecamatanList, error } = await getSupabasePublicClient()
       .from('kecamatan')
       .select('id, nama, kode_wilayah, jumlah_penduduk, kelurahan:kelurahan(id, nama, kode_wilayah, jumlah_penduduk)')
       .order('kode_wilayah', { ascending: true });
@@ -32,4 +34,3 @@ export async function GET(req: NextRequest) {
     return apiError('INTERNAL_ERROR', 'Gagal memuat referensi wilayah Surakarta');
   }
 }
-

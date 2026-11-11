@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server';
 import { LaporanSerupaQuerySchema } from '@/lib/contracts/laporan';
 import { apiSukses, apiError } from '@/lib/server/response';
-import { supabaseAdmin } from '@/lib/server/supabase-admin';
+import { getSupabasePublicClient, isSupabasePublicConfigured } from '@/lib/server/supabase-server';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,8 +23,12 @@ export async function GET(req: NextRequest) {
     }
 
     const { kategori_id, latitude, longitude, radius_meter, maks } = parsed.data;
+    if (!isSupabasePublicConfigured()) {
+      return apiError('SERVICE_UNAVAILABLE', 'Supabase belum dikonfigurasi untuk mencari laporan serupa.');
+    }
 
-    const { data, error } = await supabaseAdmin.rpc('fn_laporan_serupa', {
+    const supabasePublic = getSupabasePublicClient();
+    const { data, error } = await supabasePublic.rpc('fn_laporan_serupa', {
       p_kategori_id: kategori_id,
       p_latitude: latitude,
       p_longitude: longitude,
@@ -36,7 +40,23 @@ export async function GET(req: NextRequest) {
       return apiError('SERVICE_UNAVAILABLE', 'Deteksi laporan serupa sementara tidak tersedia.');
     }
 
-    return apiSukses(data || []);
+    const candidates = data || [];
+    if (candidates.length === 0) {
+      return apiSukses([]);
+    }
+
+    const { data: realReports, error: realReportsError } = await supabasePublic
+      .from('laporan_publik')
+      .select('id')
+      .eq('is_simulasi', false)
+      .in('id', candidates.map((item: { id: string }) => item.id));
+
+    if (realReportsError) {
+      return apiError('INTERNAL_ERROR', 'Gagal memverifikasi laporan serupa dari Supabase.');
+    }
+
+    const realReportIds = new Set((realReports || []).map((item) => item.id));
+    return apiSukses(candidates.filter((item: { id: string }) => realReportIds.has(item.id)));
   } catch (err: any) {
     return apiError('INTERNAL_ERROR', 'Gagal mendeteksi laporan serupa di sekitar lokasi');
   }
