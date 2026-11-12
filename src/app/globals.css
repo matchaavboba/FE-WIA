@@ -8,7 +8,7 @@ html { font-size: calc(16px * var(--fs)); scroll-behavior: smooth; }
 body { font-family: 'Montserrat Variable', system-ui, sans-serif; background: linear-gradient(180deg, #28264b 0%, #4E5174 100%); color: #E8EAE7; }
 
 /* ── Gradien palet Figma ── */
-.bg-nav { background: linear-gradient(100deg, #E8EAE7 0%, #E8EAE7 12%, #6D729A 38%, #4E5174 100%); }
+.bg-nav { background: linear-gradient(85deg, #E8EAE7 0%, #4E5174 100%); }
 .bg-foot { background: linear-gradient(180deg, #E8EAE7 0%, #959EC9 100%); }
 .bg-night { background: linear-gradient(180deg, #28264b 0%, #4E5174 100%); }
 .bg-hero { background: #BEBDCC; }
